@@ -1,12 +1,13 @@
 package org.example;
 import java.sql.*;
-import java.util.*;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        String url = "jdbc:mysql://localhost:3306/nombre_basedatos";
-        String user = "usuario";
-        String password = "contraseña";
+        // Cambia estos valores con tu información de la base de datos.
+        String url = "jdbc:mysql://localhost:3306/pruebas";
+        String user = "root";
+        String password = "";
         Connection conn = null;
 
         try {
@@ -25,40 +26,43 @@ public class Main {
 
             // Insertar la computadora
             String sqlComputadora = "INSERT INTO Computadora (Codigo, Marca, Modelo) VALUES (?, ?, ?)";
-            PreparedStatement stmtCompu = conn.prepareStatement(sqlComputadora, Statement.RETURN_GENERATED_KEYS);
-            stmtCompu.setString(1, codigo);
-            stmtCompu.setString(2, marca);
-            stmtCompu.setString(3, modelo);
-            stmtCompu.executeUpdate();
+            try (PreparedStatement stmtCompu = conn.prepareStatement(sqlComputadora, Statement.RETURN_GENERATED_KEYS)) {
+                stmtCompu.setString(1, codigo);
+                stmtCompu.setString(2, marca);
+                stmtCompu.setString(3, modelo);
+                stmtCompu.executeUpdate();
 
-            // Obtener el ID generado de la computadora
-            ResultSet generatedKeys = stmtCompu.getGeneratedKeys();
-            long computadoraId = 0;
-            if (generatedKeys.next()) {
-                computadoraId = generatedKeys.getLong(1);
+                // Obtener el ID generado de la computadora
+                try (ResultSet generatedKeys = stmtCompu.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        long computadoraId = generatedKeys.getLong(1);
+
+                        // Solicitar componentes asociados
+                        System.out.println("¿Cuántos componentes desea agregar?");
+                        int numComponentes = scanner.nextInt();
+                        scanner.nextLine(); // Limpiar buffer
+
+                        // Preparar la sentencia para componentes
+                        String sqlComponente = "INSERT INTO Componente (Nombre, nroSerie, idComputadora) VALUES (?, ?, ?)";
+                        try (PreparedStatement stmtComp = conn.prepareStatement(sqlComponente)) {
+                            for (int i = 0; i < numComponentes; i++) {
+                                System.out.println("Ingrese el nombre del componente: ");
+                                String nombre = scanner.nextLine();
+                                System.out.println("Ingrese el número de serie del componente: ");
+                                String nroSerie = scanner.nextLine();
+
+                                // Insertar componente
+                                stmtComp.setString(1, nombre);
+                                stmtComp.setString(2, nroSerie);
+                                stmtComp.setLong(3, computadoraId);
+                                stmtComp.executeUpdate();
+                            }
+                        }
+                    }
+                }
             }
 
-            // Solicitar componentes asociados
-            System.out.println("¿Cuántos componentes desea agregar?");
-            int numComponentes = scanner.nextInt();
-            scanner.nextLine(); // Limpiar buffer
-
-            for (int i = 0; i < numComponentes; i++) {
-                System.out.println("Ingrese el nombre del componente: ");
-                String nombre = scanner.nextLine();
-                System.out.println("Ingrese el número de serie del componente: ");
-                String nroSerie = scanner.nextLine();
-
-                // Insertar componente
-                String sqlComponente = "INSERT INTO Componente (Nombre, nroSerie, idComputadora) VALUES (?, ?, ?)";
-                PreparedStatement stmtComp = conn.prepareStatement(sqlComponente);
-                stmtComp.setString(1, nombre);
-                stmtComp.setString(2, nroSerie);
-                stmtComp.setLong(3, computadoraId);
-                stmtComp.executeUpdate();
-            }
-
-            // Si todo va bien, confirmar transacción
+            // Confirmar la transacción
             conn.commit();
             System.out.println("Datos almacenados correctamente.");
         } catch (SQLException e) {
@@ -66,6 +70,7 @@ public class Main {
             try {
                 if (conn != null) {
                     conn.rollback();
+                    System.out.println("Transacción revertida debido a un error.");
                 }
             } catch (SQLException ex) {
                 ex.printStackTrace();
@@ -76,6 +81,7 @@ public class Main {
             try {
                 if (conn != null) {
                     conn.close();
+                    System.out.println("Conexión cerrada.");
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
