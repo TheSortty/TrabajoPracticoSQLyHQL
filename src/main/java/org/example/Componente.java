@@ -15,6 +15,15 @@ public class Componente {
     @JoinColumn(name = "computadora_id")
     private Computadora computadora;
 
+    public Componente(String nombre, String nroSerie) {
+        this.nombre = nombre;
+        this.nroSerie = nroSerie;
+    }
+
+    public Componente() {
+
+    }
+
     // Getters y setters
     public Computadora getComputadora() {
         return computadora;

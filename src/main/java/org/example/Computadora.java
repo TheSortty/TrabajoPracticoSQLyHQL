@@ -1,6 +1,7 @@
 package org.example;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -15,6 +16,17 @@ public class Computadora {
 
     @OneToMany(mappedBy = "computadora", cascade = CascadeType.ALL)
     private List<Componente> componentes;
+
+    public Computadora() {
+
+    }
+
+    public Computadora(String codigo, String marca, String modelo) {
+        this.codigo = codigo;
+        this.marca = marca;
+        this.modelo = modelo;
+        this.componentes = new ArrayList<>();
+    }
 
     // Getters y setters
     public String getCodigo() {
@@ -55,5 +67,8 @@ public class Computadora {
 
     public void setModelo(String modelo) {
         this.modelo = modelo;
+    }
+    public void agregarComponente(Componente componente) {
+        this.componentes.add(componente);
     }
 }

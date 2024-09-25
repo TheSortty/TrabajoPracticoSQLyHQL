@@ -4,14 +4,12 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        // Cambia estos valores con tu información de la base de datos.
         String url = "jdbc:mysql://localhost:3306/pruebas";
         String user = "root";
         String password = "";
         Connection conn = null;
 
         try {
-            // Conectar a la base de datos
             conn = DriverManager.getConnection(url, user, password);
             conn.setAutoCommit(false); // Iniciar transacción
 
@@ -24,12 +22,31 @@ public class Main {
             System.out.println("Ingrese el modelo de la computadora: ");
             String modelo = scanner.nextLine();
 
-            // Insertar la computadora
+            // Crear objeto Computadora
+            Computadora computadora = new Computadora(codigo, marca, modelo);
+
+            // Solicitar componentes asociados
+            System.out.println("¿Cuántos componentes desea agregar?");
+            int numComponentes = scanner.nextInt();
+            scanner.nextLine(); // Limpiar buffer
+
+            for (int i = 0; i < numComponentes; i++) {
+                System.out.println("Ingrese el nombre del componente: ");
+                String nombre = scanner.nextLine();
+                System.out.println("Ingrese el número de serie del componente: ");
+                String nroSerie = scanner.nextLine();
+
+                // Crear objeto Componente y agregarlo a la computadora
+                Componente componente = new Componente(nombre, nroSerie);
+                computadora.agregarComponente(componente);
+            }
+
+            // Insertar la computadora y sus componentes en la base de datos
             String sqlComputadora = "INSERT INTO Computadora (Codigo, Marca, Modelo) VALUES (?, ?, ?)";
             try (PreparedStatement stmtCompu = conn.prepareStatement(sqlComputadora, Statement.RETURN_GENERATED_KEYS)) {
-                stmtCompu.setString(1, codigo);
-                stmtCompu.setString(2, marca);
-                stmtCompu.setString(3, modelo);
+                stmtCompu.setString(1, computadora.getCodigo());
+                stmtCompu.setString(2, computadora.getMarca());
+                stmtCompu.setString(3, computadora.getModelo());
                 stmtCompu.executeUpdate();
 
                 // Obtener el ID generado de la computadora
@@ -37,23 +54,12 @@ public class Main {
                     if (generatedKeys.next()) {
                         long computadoraId = generatedKeys.getLong(1);
 
-                        // Solicitar componentes asociados
-                        System.out.println("¿Cuántos componentes desea agregar?");
-                        int numComponentes = scanner.nextInt();
-                        scanner.nextLine(); // Limpiar buffer
-
-                        // Preparar la sentencia para componentes
+                        // Insertar los componentes
                         String sqlComponente = "INSERT INTO Componente (Nombre, nroSerie, idComputadora) VALUES (?, ?, ?)";
                         try (PreparedStatement stmtComp = conn.prepareStatement(sqlComponente)) {
-                            for (int i = 0; i < numComponentes; i++) {
-                                System.out.println("Ingrese el nombre del componente: ");
-                                String nombre = scanner.nextLine();
-                                System.out.println("Ingrese el número de serie del componente: ");
-                                String nroSerie = scanner.nextLine();
-
-                                // Insertar componente
-                                stmtComp.setString(1, nombre);
-                                stmtComp.setString(2, nroSerie);
+                            for (Componente componente : computadora.getComponentes()) {
+                                stmtComp.setString(1, componente.getNombre());
+                                stmtComp.setString(2, componente.getNroSerie());
                                 stmtComp.setLong(3, computadoraId);
                                 stmtComp.executeUpdate();
                             }
